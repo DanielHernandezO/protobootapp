@@ -1,33 +1,36 @@
 version: 0.2
-
 phases:
-  install:
-    #Si utiliza la imagen estándar de Ubuntu 2.0 o posterior, debe especificar las versiones del tiempo de ejecución.
-    #Si especifica las versiones del tiempo de ejecución y utiliza una imagen que no sea la estándar de Ubuntu 2.0, se produce un error en la compilación.
-    runtime-versions:
-      java: corretto17
-
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR....
+      - aws --version
+      #- $(aws ecr get-login --region ap-south-1 --no-include-email)
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 060795907639.dkr.ecr.us-east-1.amazonaws.com
+      - # Replace with this to your repository URI
+      - REPOSITORY_URI=060795907639.dkr.ecr.us-east-1.amazonaws.com/protoboot-app
+      - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
   build:
     commands:
-      - mvn compile
-      - mvn test
-      - mvn install
-      # - command
+      - echo Build started on `date`
+      - echo building the Jar file
+      - mvn clean install
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - mvn package
-      - mv target/protobootapp-0.0.1-SNAPSHOT.jar root.jar
-      # - command
-reports:
-  jacoco-report:
-    files:
-      - 'target/site/jacoco/jacoco.xml'
-    file-format: 'JACOCOXML'
-  junit-report:
-    files:
-      - 'target/surefire-reports/*.xml'
-    file-format: 'JUNITXML'
-
+      - echo Build completed on `date`
+      - echo pushing to repo
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      # Give your container name
+      - DOCKER_CONTAINER_NAME=spring-demo-ecr
+      - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo $DOCKER_CONTAINER_NAME
+      - echo printing imagedefinitions.json
+      - cat imagedefinitions.json
 artifacts:
   files:
-    - root.jar
+    - imagedefinitions.json
+    - target/springboot-aws-deploy.jar
