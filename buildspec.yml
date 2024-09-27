@@ -14,9 +14,11 @@ phases:
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
   build:
     commands:
-      - echo Logging to Amazon Build `date`
+      - echo Build started on `date`
+      - echo building the Jar file
       - mvn clean install
-      - docker build -t protoboot-app:latest .
+      - echo Building the Docker image...
+      - docker build -t protoboot-app .
       - docker tag protoboot-app:latest $REPOSITORY_URI:$IMAGE_TAG
 
     post_build:
@@ -39,3 +41,8 @@ reports:
     files:
       - 'target/surefire-reports/*.xml'
     file-format: 'JUNITXML'
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - target/protobootapp-0.0.1-SNAPSHOT.jar
