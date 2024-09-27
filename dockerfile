@@ -4,6 +4,6 @@ VOLUME /tmp
 
 EXPOSE 8080
 
-ADD target/protobootapp-0.0.1-SNAPSHOT.jar protobootapp.jar
+COPY target/protobootapp-0.0.1-SNAPSHOT.jar protobootapp.jar
 
-ENTRYPOINT ["java", "-jar","/protobootapp.jar"]
+ENTRYPOINT ["java", "-jar", "/protobootapp.jar"]
