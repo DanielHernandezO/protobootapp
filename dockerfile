@@ -1,5 +1,9 @@
-FROM amazoncorretto:17-alpine
+FROM public.ecr.aws/docker/library/openjdk:17-jdk-slim
+
 VOLUME /tmp
-ADD target/protobootapp-0.0.1-SNAPSHOT.jar protobootapp.jar
+
 EXPOSE 8080
+
+ADD target/protobootapp-0.0.1-SNAPSHOT.jar protobootapp.jar
+
 ENTRYPOINT ["java", "-jar","/protobootapp.jar"]
