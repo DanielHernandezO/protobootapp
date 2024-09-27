@@ -5,7 +5,7 @@ phases:
       - echo Logging in to Amazon ECR....
       - aws --version
       #- $(aws ecr get-login --region ap-south-1 --no-include-email)
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
       - # Replace with this to your repository URI
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/protoboot-app
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
@@ -13,16 +13,16 @@ phases:
     commands:
       - echo Logging to Amazon Build `date`
       - mvn clean install
-      - docker build -t $REPOSITORY_ECR_URI:latest .
-      - docker tag $REPOSITORY_ECR_URI:latest $REPOSITORY_ECR_URI:$IMAGE_TAG
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
       # - command
     post_build:
       commands:
         - echo Logging to Amazon Push `date`
-        - docker push $REPOSITORY_ECR_URI:latest
-        - docker push $REPOSITORY_ECR_URI:$IMAGE_TAG
+        - docker push $REPOSITORY_URI:latest
+        - docker push $REPOSITORY_URI:$IMAGE_TAG
         - DOCKER_CONTAINER_NAME=protobootapp_container
-        - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_ECR_URI:$IMAGE_TAG > imagedefinitions.json
+        - printf '[{"name":"%s","imageUri":"%s"}]' $DOCKER_CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
         - echo $DOCKER_CONTAINER_NAME
         - echo printing imagedefinitions.json
         - cat imagedefinitions.json
@@ -36,8 +36,3 @@ reports:
     files:
       - 'target/surefire-reports/*.xml'
     file-format: 'JUNITXML'
-
-artifacts:
-    files:
-      - imagedefinitions.json
-      - target/protobootapp.jar
